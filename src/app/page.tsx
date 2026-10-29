@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
 import './components/dashboard.css';
 
 let feedItems = [
@@ -15,10 +17,45 @@ let catalogData = Array.from({ length: 500 }, (_, i) => ({
   stock: Math.floor(Math.random() * 1000)
 }));
 
-async function DashboardContent({ searchParams }: { searchParams: Promise<{ inspect?: string }> }) {
+async function DashboardContent({ searchParams }: { searchParams: Promise<{ inspect?: string, step?: string, itemName?: string, wizard?: string }> }) {
   const params = await searchParams;
   const inspectId = params?.inspect ? parseInt(params.inspect, 10) : null;
   const selectedItem = catalogData.find((item) => item.id === inspectId);
+
+  const currentStep = params?.step || '1';
+  const savedItemName = params?.itemName || '';
+  const wizardOpen = params?.wizard === 'open' || currentStep !== '1';
+
+  async function handleNextStep(formData: FormData) {
+    'use server';
+    const itemName = formData.get('itemName') as string;
+    if (!itemName) return;
+
+    // Redirect to step 2, keeping the wizard open and passing itemName in the URL
+    redirect(`/?wizard=open&step=2&itemName=${encodeURIComponent(itemName)}`);
+  }
+
+  async function handleFinalSubmit(formData: FormData) {
+    'use server';
+    const itemName = formData.get('itemName') as string;
+    const category = formData.get('category') as string;
+
+    if (!itemName || !category) return;
+
+    // Mutate server-side data store
+    catalogData.unshift({
+      id: catalogData.length + 1,
+      name: itemName,
+      category: category,
+      status: 'Stable',
+      stock: 100
+    });
+
+    feedItems.unshift(`New asset "${itemName}" added via multi-step Server Action at ${new Date().toLocaleTimeString()}`);
+
+    revalidatePath('/');
+    redirect('/'); // Reset back to base URL when finished
+  }
 
   async function handleAddInventoryItem(formData: FormData) {
     'use server';
@@ -61,33 +98,65 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<{ insp
           <p>System operational status: Nominal. Pure server architecture active.</p>
           <form action={handleLogInjection}>
             <button type="submit" style={{ marginTop: '10px' }}>
-              Simulate Real-time Log Injection (Server Action)
+              Simulate Real-time Log Injection
             </button>
           </form>
         </div>
       </details>
 
       {/* FEATURE 2: Inventory Intake Wizard */}
-      <details className="accordion-section">
+      <details className="accordion-section" open={wizardOpen}>
         <summary className="accordion-header">
-          Inventory Intake Wizard (Server Action Form)
+          Inventory Intake Wizard (Multi-Step Form)
         </summary>
         <div className="accordion-content">
-          <form action={handleAddInventoryItem}>
-            <h3>Add New Inventory Asset</h3>
-            <div className="form-group">
-              <label>Item Name</label>
-              <input type="text" name="itemName" placeholder="Enter item name..." required />
-            </div>
-            <div className="form-group">
-              <label>Category</label>
-              <select name="category">
-                <option value="Pharmaceuticals">Pharmaceuticals</option>
-                <option value="Hardware">Hardware</option>
-              </select>
-            </div>
-            <button type="submit">Submit to Server</button>
-          </form>
+
+          {currentStep === '1' && (
+            <form action={handleNextStep}>
+              <h3>Step 1: Basic Info</h3>
+              <div className="form-group">
+                <label>Item Name</label>
+                <input
+                  type="text"
+                  name="itemName"
+                  defaultValue={savedItemName}
+                  placeholder="Enter item name..."
+                  required
+                />
+              </div>
+              <button type="submit">Next Step</button>
+            </form>
+          )}
+
+          {currentStep === '2' && (
+            <form action={handleFinalSubmit}>
+              <h3>Step 2: Details & Confirmation</h3>
+              {/* Hidden input to pass the itemName forward to the final submit action */}
+              <input type="hidden" name="itemName" value={savedItemName} />
+
+              <p style={{ marginBottom: '12px', fontSize: '14px' }}>
+                <strong>Item:</strong> {savedItemName}
+              </p>
+
+              <div className="form-group">
+                <label>Category</label>
+                <select name="category" required>
+                  <option value="">Select Category</option>
+                  <option value="Pharmaceuticals">Pharmaceuticals</option>
+                  <option value="Hardware">Hardware</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit">Complete Submission</button>
+                {/* Reset link takes user back to base URL */}
+                <a href="/" style={{ textDecoration: 'none' }}>
+                  <button type="button" style={{ background: '#6b6375' }}>Reset Form</button>
+                </a>
+              </div>
+            </form>
+          )}
+
         </div>
       </details>
 
@@ -154,7 +223,6 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<{ insp
             <p><strong>Current Stock Level:</strong> {selectedItem.stock} units</p>
           </div>
 
-          {/* Closing the modal natively by linking back to the base URL */}
           <a href="?" style={{ textDecoration: 'none' }}>
             <button>Close Window</button>
           </a>
