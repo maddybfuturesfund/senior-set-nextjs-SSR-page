@@ -106,7 +106,7 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<{ insp
       </details>
 
       {/* FEATURE 4: 500-Row Table with Server-Driven Inspection Links */}
-      <details className="accordion-section">
+      <details className="accordion-section" open={selectedItem !== null}>
         <summary className="accordion-header">
           Full Asset Catalog Table ({catalogData.length} Server-Rendered Rows)
         </summary>
@@ -132,7 +132,7 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<{ insp
                   <td>{row.stock}</td>
                   <td>
                     <a href={`?inspect=${row.id}`} className="inspect-btn" style={{ textDecoration: 'none', display: 'inline-block' }}>
-                      Inspect
+                      <button>Inspect</button>
                     </a>
                   </td>
                 </tr>
@@ -144,21 +144,21 @@ async function DashboardContent({ searchParams }: { searchParams: Promise<{ insp
 
       {/* FEATURE 5: Server-Rendered Modal Dialog */}
       {selectedItem && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Asset Inspection Details</h2>
-            <div style={{ margin: '15px 0' }}>
-              <p><strong>ID:</strong> {selectedItem.id}</p>
-              <p><strong>Name:</strong> {selectedItem.name}</p>
-              <p><strong>Category:</strong> {selectedItem.category}</p>
-              <p><strong>Status:</strong> {selectedItem.status}</p>
-              <p><strong>Current Stock Level:</strong> {selectedItem.stock} units</p>
-            </div>
-            <a href="?" style={{ textDecoration: 'none' }}>
-              <button>Close Window</button>
-            </a>
+        <dialog open className="native-dialog">
+          <h2>Asset Inspection Details</h2>
+          <div style={{ margin: '15px 0' }}>
+            <p><strong>ID:</strong> {selectedItem.id}</p>
+            <p><strong>Name:</strong> {selectedItem.name}</p>
+            <p><strong>Category:</strong> {selectedItem.category}</p>
+            <p><strong>Status:</strong> {selectedItem.status}</p>
+            <p><strong>Current Stock Level:</strong> {selectedItem.stock} units</p>
           </div>
-        </div>
+
+          {/* Closing the modal natively by linking back to the base URL */}
+          <a href="?" style={{ textDecoration: 'none' }}>
+            <button>Close Window</button>
+          </a>
+        </dialog>
       )}
     </main>
   );

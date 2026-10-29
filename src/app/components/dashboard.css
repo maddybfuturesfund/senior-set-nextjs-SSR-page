@@ -89,25 +89,26 @@ header {
     border-bottom: 1px solid var(--border);
 }
 
-/* Modal Overlay */
-.modal-overlay {
+dialog.native-dialog {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    width: 420px;
+    max-width: 90vw;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    margin: 0;
 }
 
-.modal-content {
-    background: white;
-    padding: 20px;
-    width: 400px;
-    border-radius: 5px;
-    box-shadow: var(--shadow);
+dialog.native-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
 }
 
 button {
